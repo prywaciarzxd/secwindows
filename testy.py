@@ -6,8 +6,6 @@ import getpass
 import requests
 import platform
 import psutil
-import json
-import sys
 from time import sleep
 
 class UserInterface:
@@ -24,49 +22,39 @@ class UserInterface:
         print("3. Perform baseline check for known safe processes.")
         print("4. Exit")
 
-        choice = int(input("Enter your choice (1/2/3/4): "))
+        choice = input("Enter your choice (1/2/3/4): ")
         return choice
-
 
 class NetstatOutput:
     def __init__(self):
-        
+        self.api_key = None
         self.max_checks_per_minute = 4
         self.checks_counter = 0
         self.user = self.get_user()
-        self.os_type = self.get_os()
-        self.get_default_lists()
+        self.os_type = self.detect_os()
+        self.create_default_lists()
         self.user_interface = UserInterface()
-        self.user_input = self.user_interface.menu()
-    
-    def get_user(self):
-        if self.user_input == 1:
-            self.api_key = self.set_api_key()
-        elif self.user_input == 2:
-            self.get_process_info()
-
 
     def set_api_key(self):
-        os.environ['VT_ApiKey'] = getpass.getpass('Please enter correct API key for VirusTotal: ')
-        return os.environ['VT_ApiKey']
+        self.api_key = getpass.getpass('Please enter correct API key for VirusTotal: ')
 
     def get_user(self):
         return os.getlogin()
 
-    def get_default_lists(self):
+    def create_default_lists(self):
         if self.os_type in ['Windows 10', 'Windows 11']:
             self.apps_paths = [
                 r'C:\Program Files',
-                r'C:\Program Files (x86)',  # Dla aplikacji 32-bitowych na systemach 64-bitowych
+                r'C:\Program Files (x86)',  # For 32-bit applications on 64-bit systems
                 r'C:\Windows\System32',
-                r'C:\Windows\SysWOW64'      # Dla aplikacji 32-bitowych na systemach 64-bitowych
+                r'C:\Windows\SysWOW64'      # For 32-bit applications on 64-bit systems
             ]
         elif self.os_type == 'Linux':
             pass
         else:
             raise NotImplementedError(f"Unsupported OS: {self.os_type}")
 
-    def get_os(self):
+    def detect_os(self):
         os_type = platform.system()
         os_version = platform.release()
         if os_type == 'Windows':
@@ -76,7 +64,7 @@ class NetstatOutput:
                 return 'Windows 10'
         else:
             return 'Linux'
-        
+
     def start_netstat(self, command):
         try:
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -87,9 +75,6 @@ class NetstatOutput:
         except Exception as e:
             print(f'Error occurred while running netstat command: {e}')
             return []
-
-    # def get_user_input(self):
-    #     skipping = input("[?] Do u want to check ip in v")
 
     def get_process_info(self, pid):
         try:
@@ -117,11 +102,11 @@ class NetstatOutput:
     def output_ips_owner(self, ip, malicious_score, owner, asn):
         if int(malicious_score) > 0:
             print(f'Owner of IP {ip}: {owner}')
-            print(f'Numer ASN: {asn}')
-        
+            print(f'ASN Number: {asn}')
+
     def virustotal_api(self, ip_addresses):
         for ip in ip_addresses:
-            url = f'https://www.virustotal.com/api/v3/ip_addresses/{ip}'   
+            url = f'https://www.virustotal.com/api/v3/ip_addresses/{ip}'
             headers = {'x-apikey': self.api_key}
             try:
                 response = requests.get(url, headers=headers)
@@ -150,23 +135,73 @@ class NetstatOutput:
             except Exception as e:
                 print(f'Error occurred while processing IP {ip}: {e}')
 
+    def check_processes(self):
+        try:
+            processes = []
+            for process in psutil.process_iter(['pid', 'name', 'exe', 'cmdline', 'parent']):
+                processes.append(process.info)
 
+            return processes
+        except Exception as e:
+            print(f'Error occurred while retrieving process information: {e}')
+            return []
+
+    def baseline_check(self):
+        try:
+            safe_processes = [
+                "explorer.exe", "svchost.exe", "taskhost.exe", "wininit.exe", "lsass.exe", "services.exe",
+                "csrss.exe", "smss.exe", "System", "System Idle Process", "Idle", "System", "lsass.exe",
+                "spoolsv.exe", "winlogon.exe", "conhost.exe", "dllhost.exe", "wmiapsrv.exe", "wmiprvse.exe",
+                "wininit.exe", "winlogon.exe", "svchost.exe", "smss.exe", "taskhost.exe", "vds.exe",
+                "taskeng.exe", "alg.exe", "csrss.exe", "spoolsv.exe", "svchost.exe", "lsm.exe", "lsass.exe"
+            ]
+
+            processes = self.check_processes()
+            for process in processes:
+                if process['name'] not in safe_processes:
+                    print(f"Non-default process found: {process['name']}")
+
+        except Exception as e:
+            print(f'Error occurred while performing baseline check: {e}')
+
+    def handle_ip_reputation_check(self):
+        ip_addresses = self.get_ips_from_netstat()
+        if ip_addresses:
+            self.run_checks(ip_addresses)
+
+    def handle_process_paths_check(self):
+        self.check_processes()
+
+    def handle_baseline_check(self):
+        self.baseline_check()
+
+    def handle_menu_choice(self, choice):
+        if choice == '1':
+            self.handle_ip_reputation_check()
+        elif choice == '2':
+            self.handle_process_paths_check()
+        elif choice == '3':
+            self.handle_baseline_check()
+        elif choice == '4':
+            print("Exiting the program. Goodbye!")
+        else:
+            print("Invalid choice. Please enter a valid option.")
 
 def main():
-    parser = argparse.ArgumentParser(description='Check IP reputations using VirusTotal API')
-    parser.add_argument('--ips', nargs='+', help='List of IP addresses to check')
-    args = parser.parse_args()
+    netstat = NetstatOutput()
+    netstat.user_interface.welcome_message()
 
-    if not args.ips:
-        netstat = NetstatOutput()
-        ip_addresses = netstat.get_ips_from_netstat()
-    else:
-        ip_addresses = args.ips
+    while True:
+        choice = netstat.user_interface.menu()
 
-    if ip_addresses:
-        netstat = NetstatOutput()
-        netstat.run_checks(ip_addresses)
+        if choice == '4':
+            break
 
+        netstat.handle_menu_choice(choice)
+
+        # Optionally, ask for API key if user chose option 1
+        if choice == '1' and not netstat.api_key:
+            netstat.set_api_key()
 
 if __name__ == "__main__":
     main()
