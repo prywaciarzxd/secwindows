@@ -27,10 +27,13 @@ def main():
             # Placeholder for future functionality - security events
             pass
         elif user_choice == 5:
-            pass
+            pass #SECURITY WINDOWS LOGS ANALYZER
         elif user_choice == 6:
-            pass
+            pass #FIM
         elif user_choice == 7:
+            pass
+            #ssh function
+        elif user_choice == 8:
             print('Exiting the tool.')
             return
         else:

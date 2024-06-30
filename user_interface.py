@@ -16,7 +16,8 @@ class UserInterface:
         print("4. Check default services")
         print("5. Analyze logs looking for adversary")
         print("6. Create File Intergrity Monitorting baseline")
-        print("7. Exit")
+        print("7. Create ssh key or check for existence! (github)")
+        print("8. Exit")
 
         choice = int(input("Enter your choice (1/2/3/4/5/6/7): "))
         return choice
