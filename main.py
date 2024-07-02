@@ -5,7 +5,7 @@ from user_interface import UserInterface
 from netstat_output import NetstatOutput
 from virustotal_processes import VirusTotalProcesses
 from generate_github_ssh_key import SshKeyGenerator
-
+from generate_canary_token import CanaryTokenGenerator
 
 def main():
     try:
@@ -23,8 +23,8 @@ def main():
             signal.signal(signal.SIGINT, signal_handler)
             virustotal.get_non_system_apps()
         elif user_choice == 3:
-            # Placeholder for future functionality - kanarek
-            pass
+            canary = CanaryTokenGenerator()
+            canary.post_request()
         elif user_choice == 4:
             # Placeholder for future functionality - security events
             pass
@@ -35,7 +35,6 @@ def main():
         elif user_choice == 7:
             ssh = SshKeyGenerator()
             ssh.check_directory_keys()
-            #ssh function
         elif user_choice == 8:
             print('Exiting the tool.')
             return
