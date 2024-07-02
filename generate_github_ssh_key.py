@@ -3,6 +3,7 @@ import os
 import subprocess
 from time import sleep
 
+
 class SshKeyGenerator:
     def __init__(self):
         self.os_type = self.get_os()
