@@ -1,6 +1,7 @@
 import platform
 import os
 import subprocess
+from time import sleep
 
 class SshKeyGenerator:
     def __init__(self):
@@ -26,7 +27,6 @@ class SshKeyGenerator:
     def create_ssh_key(self):
         try:
             email = input("please enter your email: ")
-            github_password = 
             command = f'ssh-keygen -t ed25519 -C "{email}"'
             subprocess.run(command, shell=True, check=True)
             print("SSH key generated successfully.")
@@ -37,16 +37,29 @@ class SshKeyGenerator:
             
         #musi sie wykonac ta komenda z emailem ssh-keygen -t ed25519 -C "your_email@example.com"
 
+    def print_public_key(self, keys_dir_path):
+        contents = os.listdir(keys_dir_path)
+        for file in contents:
+            if file.endswith('.pub'):
+                public_key_path = os.path.join(keys_dir_path, file)
+                print(f"Public key ({file}):")
+                with open(public_key_path, 'r') as f:
+                    key_content = f.read().strip()
+                    print(key_content)
+
+    def get_ssh_dir(self):
+        print(f'[+] Checking default path ssh key diretory .....   \n')
+        if self.os_type == 'Windows':
+            ssh_default_dir = f'C:\\Users\\{self.username}\\.ssh'
+        elif self.os_type == 'Linux':
+            ssh_default_dir = f'/home/{os.getlogin()}/.ssh/'
+        return ssh_default_dir
+
     def display(self):
+        
+        keys_dir_path = self.get_ssh_dir()
         try:
-            contents = os.listdir(self.keys_dir_path)
-            for file in contents:
-                if file.endswith('.pub'):
-                    public_key_path = os.path.join(self.keys_dir_path, file)
-                    print(f"Public key ({file}):")
-                    with open(public_key_path, 'r') as f:
-                        key_content = f.read().strip()
-                        print(key_content)
+            self.print_public_key(keys_dir_path)
         except FileNotFoundError:
             print(f"Directory '{self.keys_dir_path}' not found.")
         except PermissionError:
@@ -57,13 +70,13 @@ class SshKeyGenerator:
         if command == 'display':
             self.display()
         if command == 'display && add':
-            self.display()
             self.github_public_shh_key_add()
-
+            self.display()
+            
     def github_public_shh_key_add(self):
-        print("Adding public SSH key to GitHub...")
-        # Tutaj wstaw kod do dodawania klucza publicznego do GitHub
-
+        print("Adding public SSH key to GitHub... \n")
+        print("Go to: https://github.com/settings/ssh/new and paste ur public key! \n")
+        #print(f'Public key to copy: {subprocess.run(['cat', 'example.txt'], capture_output=True, text=True)}')
     def check_directory_keys(self):
         try:
             contents = os.listdir(self.keys_dir_path)
