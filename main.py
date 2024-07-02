@@ -1,9 +1,11 @@
 import argparse
+import signal 
+import sys
 from user_interface import UserInterface
 from netstat_output import NetstatOutput
 from virustotal_processes import VirusTotalProcesses
-import signal 
-import sys
+from generate_github_ssh_key import SshKeyGenerator
+
 
 def main():
     try:
@@ -31,7 +33,8 @@ def main():
         elif user_choice == 6:
             pass #FIM
         elif user_choice == 7:
-            pass
+            ssh = SshKeyGenerator()
+            ssh.check_directory_keys()
             #ssh function
         elif user_choice == 8:
             print('Exiting the tool.')
