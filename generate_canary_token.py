@@ -9,10 +9,10 @@ class CanaryTokenGenerator:
 
     def get_payload(self):
         print('[?] What canary type do you want to create?')
-        canary_type = input("[+] Enter ms_word, adobe_pdf, ms_excel: ")
+        self.canary_type = input("[+] Enter ms_word, adobe_pdf, ms_excel: ")
         email = input('[+] Enter e-mail to send notification to: ')
         return {
-            'type': canary_type,
+            'type': self.canary_type,
             'email': email,
             'webhook_url': '',
             'fmt': '',
@@ -66,13 +66,19 @@ class CanaryTokenGenerator:
             print(f"[-] Failed to generate token. Status code: {response.status_code}")
 
     def get_save_location(self):
+        if self.canary_type == 'ms_word':
+            extension = 'docx'
+        elif self.canary_type == 'adobe_pdf':
+            extension = 'pdf'
+        elif self.canary_type == 'ms_excel':
+            extension = 'xlsx'
         save_location = None
         if platform.system() == 'Windows':
             user_home = os.getenv('USERPROFILE')
-            save_location = os.path.join(user_home, 'Downloads', 'canary_token.xlsx')
+            save_location = os.path.join(user_home, 'Downloads', self.canary_type + '.' + extension)
         elif platform.system() == 'Linux':
             user_home = os.path.expanduser('~')
-            save_location = os.path.join(user_home, 'Documents', 'canary_token.xlsx')
+            save_location = os.path.join(user_home, 'Documents', self.canary_type + '.' + extension)
         else:
             print("[-] Unsupported operating system.")
         return save_location
