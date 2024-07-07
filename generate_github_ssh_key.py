@@ -28,7 +28,10 @@ class SshKeyGenerator:
     def create_ssh_key(self):
         try:
             email = input("please enter your email: ")
-            command = f'ssh-keygen -t ed25519 -C "{email}"'
+            if self.os_type == 'Windows':
+                command = f'ssh-keygen.exe -t ed25519 -C {email}'
+            elif self.os_type == 'Linux':
+                command = f'ssh-keygen -t ed25519 -C "{email}"'
             subprocess.run(command, shell=True, check=True)
             print("SSH key generated successfully.")
         except subprocess.CalledProcessError as e:
@@ -36,8 +39,6 @@ class SshKeyGenerator:
         except Exception as e:
             print(f"An error occurred: {e}")
             
-        #musi sie wykonac ta komenda z emailem ssh-keygen -t ed25519 -C "your_email@example.com"
-
     def print_public_key(self, keys_dir_path):
         contents = os.listdir(keys_dir_path)
         for file in contents:
